@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Searchcraft Quickstart Client</title>
+    <meta name="description" content="Single page search client with no external dependencies">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnected" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .config-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .collapse-btn {
+            background: none;
+            border: 1px solid #444;
+            color: #cccccc;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+            align-self: center;
+        }
+
+        .collapse-btn:hover {
+            background: #444;
+            color: #ffffff;
+        }
+
+        .config-content {
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .config-content.collapsed {
+            max-height: 0;
+            margin: 0;
+            padding: 0;
+        }
+
+        .config-form {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            background: #2a2a2a;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            min-width: 300px;
+        }
+
+        .config-form h3 {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            color: #ffffff;
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: #cccccc;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #333;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #007acc;
+            box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+        }
+
+        .password-group {
+            position: relative;
+        }
+
+        .reveal-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #cccccc;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .reveal-btn:hover {
+            color: #ffffff;
+        }
+
+        .main-search {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 80vh;
+            margin: 0 auto;
+            margin-left: 350px;
+        }
+
+        .search-container {
+            width: 100%;
+            /*max-width: 800px;*/
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1.5rem;
+            font-size: 1.5rem;
+            border: 2px solid #444;
+            border-radius: 8px;
+            background: #2a2a2a;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 1rem;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #007acc;
+            box-shadow: 0 0 0 3px rgba(0, 122, 204, 0.2);
+        }
+
+        .search-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toggle {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: #444;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle.active {
+            background: #007acc;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle.active .toggle-slider {
+            transform: translateX(26px);
+        }
+
+        .toggle-label {
+            font-size: 1.1rem;
+            color: #cccccc;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .results-container {
+            width: 100%;
+            margin-top: 2rem;
+            min-height: 200px;
+        }
+
+        .json-display {
+            background: #2a2a2a;
+            padding: 2rem;
+            border-radius: 8px;
+            border-left: 4px solid #007acc;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .json-display .json-key {
+            color: #9cdcfe;
+        }
+
+        .json-display .json-string {
+            color: #ce9178;
+        }
+
+        .json-display .json-number {
+            color: #b5cea8;
+        }
+
+        .json-display .json-boolean {
+            color: #569cd6;
+        }
+
+        .json-display .json-null {
+            color: #569cd6;
+        }
+
+        .loading {
+            text-align: center;
+            color: #cccccc;
+            font-style: italic;
+            padding: 2rem;
+        }
+
+        .error {
+            background: #3a1a1a;
+            border-left-color: #cc3333;
+            color: #ffcccc;
+            padding: 2rem;
+            border-radius: 8px;
+        }
+
+        .status-indicator {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .status-connected {
+            background: #1a3a1a;
+            color: #ccffcc;
+            border: 1px solid #339933;
+        }
+
+        .status-disconnected {
+            background: #3a1a1a;
+            color: #ffcccc;
+            border: 1px solid #cc3333;
+        }
+
+        .search-stats {
+            background: #333;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            color: #cccccc;
+            border-left: 4px solid #007acc;
+        }
+
+        .search-stats .stat {
+            margin-right: 2rem;
+            display: inline-block;
+        }
+
+        .search-stats .stat-value {
+            color: #ffffff;
+            font-weight: 500;
+        }
+        @media (max-width: 768px) {
+          .main-search {
+              margin-left: 2rem;
+              margin-top: 2rem;
+          }
+
+          .config-form {
+              position: relative;
+              margin-bottom: 2rem;
+              margin-right: 2rem;
+              width: auto;
+          }
+      }
+    </style>
+</head>
+<body>
+    <div class="config-form" id="configForm">
+      <div class="config-header">
+          <h3>Configuration</h3>
+          <button type="button" class="collapse-btn" id="collapseBtn">−</button>
+      </div>
+      <div class="config-content" id="configContent">
+          <div>Add your configuration details here</div>
+          <br/>
+          <div class="form-group">
+              <label for="endpointUrl">Endpoint URL</label>
+              <input type="url" id="endpointUrl" placeholder="https://yourclusterurl.io">
+          </div>
+          <div class="form-group">
+              <label for="indexName">Index Name</label>
+              <input type="text" id="indexName" placeholder="my_index">
+          </div>
+          <div class="form-group">
+              <label for="readKey">Read Key</label>
+              <div class="password-group">
+                  <input type="password" id="readKey" placeholder="read_key...">
+                  <button type="button" class="reveal-btn" id="revealBtn">👁️</button>
+              </div>
+          </div>
+          <div class="form-group">
+              <label for="resultsPerPage">Results Per Page</label>
+              <input type="number" id="resultsPerPage" placeholder="5" min="1" max="100" value="5">
+          </div>
+      </div>
+    </div>
+
+    <div class="main-search">
+        <div class="search-container">
+            <input
+                type="text"
+                class="search-input"
+                id="searchInput"
+                placeholder="search term"
+                autocomplete="off"
+                disabled
+            >
+
+            <div class="search-controls">
+                <div class="toggle-container">
+                    <div class="toggle" id="exactToggle">
+                        <div class="toggle-slider"></div>
+                    </div>
+                    <label class="toggle-label">exact</label>
+                </div>
+            </div>
+
+            <div class="results-container" id="resultsContainer"></div>
+        </div>
+    </div>
+
+    <div class="status-indicator status-disconnected" id="statusIndicator">
+        Not Ready
+    </div>
+
+    <script>
+        const createElement = (tag, className = '', content = '') => {
+            const element = document.createElement(tag);
+            if (className) element.className = className;
+            if (content) element.textContent = content;
+            return element;
+        };
+        const handleConfigCollapse = () => {
+            const content = elements.configContent;
+            const btn = elements.collapseBtn;
+
+            content.classList.toggle('collapsed');
+            btn.textContent = content.classList.contains('collapsed') ? '+' : '−';
+        };
+        const debounce = (func, wait) => {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        };
+
+        const highlightJson = (json) => {
+            const jsonString = JSON.stringify(json, null, 2);
+            return jsonString
+                .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, (match) => {
+                    let cls = 'json-number';
+                    if (/^"/.test(match)) {
+                        if (/:$/.test(match)) {
+                            cls = 'json-key';
+                        } else {
+                            cls = 'json-string';
+                        }
+                    } else if (/true|false/.test(match)) {
+                        cls = 'json-boolean';
+                    } else if (/null/.test(match)) {
+                        cls = 'json-null';
+                    }
+                    return `<span class="${cls}">${match}</span>`;
+                });
+        };
+
+        const createSearchcraftClient = (config) => {
+            const { endpointUrl, indexName, readKey } = config;
+
+            if (!endpointUrl || !indexName || !readKey) {
+                return null;
+            }
+
+            const baseUrl = endpointUrl.replace(/\/$/, '');
+
+            const makeRequest = async (endpoint, options = {}) => {
+                const url = `${baseUrl}${endpoint}`;
+                const defaultOptions = {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `${readKey}`,
+                    },
+                };
+
+                try {
+                    const response = await fetch(url, { ...defaultOptions, ...options });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    return await response.json();
+                } catch (error) {
+                    console.error('Request failed:', error);
+                    throw error;
+                }
+            };
+
+            return {
+              search: async (query, isExact = false, limit = 10) => {
+                  const searchBody = {
+                      query: isExact
+                          ? { "exact": { "ctx": query } }
+                          : { "fuzzy": { "ctx": query } },
+                      limit: limit,
+                      offset: 0
+                  };
+
+                  return makeRequest(`/index/${indexName}/search`,
+                  {
+                      method: 'POST',
+                      body: JSON.stringify(searchBody)
+                  });
+              }
+            };
+        };
+
+        const state = {
+            client: null,
+            config: {
+                endpointUrl: '',
+                indexName: '',
+                readKey: '',
+                resultsPerPage: 5
+            },
+            isExact: false,
+            isSearching: false
+        };
+
+        const elements = {
+            endpointUrl: document.getElementById('endpointUrl'),
+            indexName: document.getElementById('indexName'),
+            readKey: document.getElementById('readKey'),
+            resultsPerPage: document.getElementById('resultsPerPage'),
+            revealBtn: document.getElementById('revealBtn'),
+            searchInput: document.getElementById('searchInput'),
+            exactToggle: document.getElementById('exactToggle'),
+            resultsContainer: document.getElementById('resultsContainer'),
+            statusIndicator: document.getElementById('statusIndicator'),
+            collapseBtn: document.getElementById('collapseBtn'),
+            configContent: document.getElementById('configContent')
+        };
+
+        const handleConfigChange = () => {
+            const newConfig = {
+                endpointUrl: elements.endpointUrl.value.trim(),
+                indexName: elements.indexName.value.trim(),
+                readKey: elements.readKey.value.trim(),
+                resultsPerPage: parseInt(elements.resultsPerPage.value) || 5
+            };
+
+            state.config = newConfig;
+            state.client = createSearchcraftClient(newConfig);
+
+            updateConnectionStatus();
+
+            if (state.client) {
+                elements.searchInput.disabled = false;
+                elements.searchInput.focus();
+            } else {
+                elements.searchInput.disabled = true;
+                clearResults();
+            }
+        };
+
+        const handlePasswordReveal = () => {
+            const input = elements.readKey;
+            const btn = elements.revealBtn;
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁️';
+            }
+        };
+
+        const handleToggleExact = () => {
+            state.isExact = !state.isExact;
+            elements.exactToggle.classList.toggle('active', state.isExact);
+
+            if (elements.searchInput.value.trim() && state.client) {
+                performSearch(elements.searchInput.value.trim());
+            }
+        };
+
+        const performSearch = async (query) => {
+            if (!state.client || !query.trim() || state.isSearching) {
+                return;
+            }
+
+            state.isSearching = true;
+            showLoading();
+
+            try {
+                const results = await state.client.search(query, state.isExact, state.config.resultsPerPage);
+                displayResults(results);
+            } catch (error) {
+                showError(`Search failed: ${error.message}`);
+            } finally {
+                state.isSearching = false;
+            }
+        };
+
+        const debouncedSearch = debounce((query) => {
+            performSearch(query);
+        }, 20);
+
+        const handleSearchInput = (event) => {
+            const query = event.target.value.trim();
+
+            if (query.length === 0) {
+                clearResults();
+                return;
+            }
+
+            if (query.length >= 2) {
+                debouncedSearch(query);
+            }
+        };
+
+        const updateConnectionStatus = () => {
+            const isConnected = state.client !== null;
+            const indicator = elements.statusIndicator;
+
+            indicator.className = `status-indicator ${isConnected ? 'status-connected' : 'status-disconnected'}`;
+            indicator.textContent = isConnected ? 'Ready' : 'Not Ready';
+        };
+
+        const showLoading = () => {
+            elements.resultsContainer.innerHTML = '<div class="loading">Searching...</div>';
+        };
+
+        const clearResults = () => {
+            elements.resultsContainer.innerHTML = '';
+        };
+
+        const showError = (message) => {
+            const errorElement = createElement('div', 'error', message);
+            elements.resultsContainer.innerHTML = '';
+            elements.resultsContainer.appendChild(errorElement);
+        };
+
+        const displayResults = (results) => {
+            const container = elements.resultsContainer;
+            container.innerHTML = '';
+
+            if (!results) {
+                const noResults = createElement('div', 'error', 'No results returned');
+                container.appendChild(noResults);
+                return;
+            }
+
+            if (results.data) {
+                const statsDiv = createElement('div', 'search-stats');
+                const count = results.data.count || 0;
+                //time_taken is in seconds so we'll convert to milliseconds for easier reading.
+                const timeTakenMs = results.data.time_taken ? (results.data.time_taken * 1000).toFixed(2) : '0.00';
+
+                statsDiv.innerHTML = `
+                    <span class="stat">
+                        <strong>Matches:</strong> <span class="stat-value">${count.toLocaleString()}</span>
+                    </span>
+                    <span class="stat">
+                        <strong>Time:</strong> <span class="stat-value">${timeTakenMs}ms</span>
+                    </span>
+                `;
+                container.appendChild(statsDiv);
+            }
+
+            const jsonDisplay = createElement('div', 'json-display');
+            jsonDisplay.innerHTML = highlightJson(results);
+            container.appendChild(jsonDisplay);
+        };
+
+        const initializeEventListeners = () => {
+            // Configuration form listeners
+            elements.endpointUrl.addEventListener('input', handleConfigChange);
+            elements.indexName.addEventListener('input', handleConfigChange);
+            elements.readKey.addEventListener('input', handleConfigChange);
+            elements.resultsPerPage.addEventListener('input', handleConfigChange);
+            elements.revealBtn.addEventListener('click', handlePasswordReveal);
+            elements.collapseBtn.addEventListener('click', handleConfigCollapse);
+            // Search functionality listeners
+            elements.searchInput.addEventListener('input', handleSearchInput);
+            elements.exactToggle.addEventListener('click', handleToggleExact);
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (event) => {
+                if (event.ctrlKey && event.key === '/') {
+                    event.preventDefault();
+                    elements.searchInput.focus();
+                }
+
+                if (event.key === 'Escape') {
+                    elements.searchInput.blur();
+                    clearResults();
+                }
+            });
+        };
+
+        const loadSavedConfig = () => {
+            try {
+                const saved = localStorage.getItem('searchcraft-config');
+                if (saved) {
+                    const config = JSON.parse(saved);
+                    elements.endpointUrl.value = config.endpointUrl || '';
+                    elements.indexName.value = config.indexName || '';
+                    elements.readKey.value = config.readKey || '';
+                    elements.resultsPerPage.value = config.resultsPerPage || 5;
+                    handleConfigChange();
+                }
+            } catch (error) {
+                console.warn('Failed to load saved configuration:', error);
+            }
+        };
+
+        const saveConfig = () => {
+            try {
+                localStorage.setItem('searchcraft-config', JSON.stringify(state.config));
+            } catch (error) {
+                console.warn('Failed to save configuration:', error);
+            }
+        };
+
+        const handleConfigChangeWithSave = () => {
+            handleConfigChange();
+            saveConfig();
+        };
+
+        const initialize = () => {
+            initializeEventListeners();
+            loadSavedConfig();
+            updateConnectionStatus();
+
+            elements.endpointUrl.removeEventListener('input', handleConfigChange);
+            elements.indexName.removeEventListener('input', handleConfigChange);
+            elements.readKey.removeEventListener('input', handleConfigChange);
+            elements.resultsPerPage.removeEventListener('input', handleConfigChange);
+
+            elements.endpointUrl.addEventListener('input', handleConfigChangeWithSave);
+            elements.indexName.addEventListener('input', handleConfigChangeWithSave);
+            elements.readKey.addEventListener('input', handleConfigChangeWithSave);
+            elements.resultsPerPage.addEventListener('input', handleConfigChangeWithSave);
+
+            const firstEmptyField = [elements.endpointUrl, elements.indexName, elements.readKey]
+                .find(field => !field.value.trim());
+
+            if (firstEmptyField) {
+                firstEmptyField.focus();
+            } else if (state.client) {
+                elements.searchInput.focus();
+            }
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initialize);
+        } else {
+            initialize();
+        }
+
+        window.searchcraftDebug = {
+            state,
+            client: () => state.client,
+            performSearch
+        };
+    </script>
+</body>
+</html>
