@@ -516,7 +516,6 @@
 
             if (state.client) {
                 elements.searchInput.disabled = false;
-                elements.searchInput.focus();
             } else {
                 elements.searchInput.disabled = true;
                 clearResults();
@@ -703,11 +702,11 @@
             elements.readKey.addEventListener('input', handleConfigChangeWithSave);
             elements.resultsPerPage.addEventListener('input', handleConfigChangeWithSave);
 
-            const firstEmptyField = [elements.endpointUrl, elements.indexName, elements.readKey]
+            const firstEmptyConfigField = [elements.endpointUrl, elements.indexName, elements.readKey]
                 .find(field => !field.value.trim());
 
-            if (firstEmptyField) {
-                firstEmptyField.focus();
+            if (firstEmptyConfigField) {
+                firstEmptyConfigField.focus();
             } else if (state.client) {
                 elements.searchInput.focus();
             }
