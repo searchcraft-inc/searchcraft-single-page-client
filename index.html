@@ -477,8 +477,8 @@
               search: async (query, isExact = false, limit = 10, searchMode = 'index', targetName = '') => {
                   const searchBody = {
                       query: isExact
-                          ? { "exact": { "ctx": query } }
-                          : { "fuzzy": { "ctx": query } },
+                          ? { "exact": { "ctx": `"${query}"` }, "occur": "must" }
+                          : { "fuzzy": { "ctx": query }, "occur": "should" },
                       limit: limit,
                       offset: 0
                   };
