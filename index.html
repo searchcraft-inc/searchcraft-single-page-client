@@ -333,8 +333,25 @@
               <input type="url" id="endpointUrl" placeholder="https://yourclusterurl.io">
           </div>
           <div class="form-group">
+              <label>Search Mode</label>
+              <div style="display: flex; gap: 1rem; margin-bottom: 0.5rem;">
+                  <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                      <input type="radio" name="searchMode" value="index" id="indexModeRadio" checked>
+                      <span>Index</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                      <input type="radio" name="searchMode" value="federation" id="federationModeRadio">
+                      <span>Federation</span>
+                  </label>
+              </div>
+          </div>
+          <div class="form-group" id="indexNameGroup">
               <label for="indexName">Index Name</label>
               <input type="text" id="indexName" placeholder="my_index">
+          </div>
+          <div class="form-group" id="federationNameGroup" style="display: none;">
+              <label for="federationName">Federation Name</label>
+              <input type="text" id="federationName" placeholder="my_federation">
           </div>
           <div class="form-group">
               <label for="readKey">Read Key</label>
@@ -457,7 +474,7 @@
             };
 
             return {
-              search: async (query, isExact = false, limit = 10) => {
+              search: async (query, isExact = false, limit = 10, searchMode = 'index', targetName = '') => {
                   const searchBody = {
                       query: isExact
                           ? { "exact": { "ctx": query } }
@@ -466,7 +483,8 @@
                       offset: 0
                   };
 
-                  return makeRequest(`/index/${indexName}/search`,
+                  const name = targetName || indexName;
+                  return makeRequest(`/${searchMode}/${name}/search`,
                   {
                       method: 'POST',
                       body: JSON.stringify(searchBody)
@@ -480,21 +498,28 @@
             config: {
                 endpointUrl: '',
                 indexName: '',
+                federationName: '',
                 readKey: '',
                 resultsPerPage: 5
             },
             isExact: false,
-            isSearching: false
+            isSearching: false,
+            searchMode: 'index'
         };
 
         const elements = {
             endpointUrl: document.getElementById('endpointUrl'),
             indexName: document.getElementById('indexName'),
+            federationName: document.getElementById('federationName'),
             readKey: document.getElementById('readKey'),
             resultsPerPage: document.getElementById('resultsPerPage'),
             revealBtn: document.getElementById('revealBtn'),
             searchInput: document.getElementById('searchInput'),
             exactToggle: document.getElementById('exactToggle'),
+            indexModeRadio: document.getElementById('indexModeRadio'),
+            federationModeRadio: document.getElementById('federationModeRadio'),
+            indexNameGroup: document.getElementById('indexNameGroup'),
+            federationNameGroup: document.getElementById('federationNameGroup'),
             resultsContainer: document.getElementById('resultsContainer'),
             statusIndicator: document.getElementById('statusIndicator'),
             collapseBtn: document.getElementById('collapseBtn'),
@@ -505,6 +530,7 @@
             const newConfig = {
                 endpointUrl: elements.endpointUrl.value.trim(),
                 indexName: elements.indexName.value.trim(),
+                federationName: elements.federationName.value.trim(),
                 readKey: elements.readKey.value.trim(),
                 resultsPerPage: parseInt(elements.resultsPerPage.value) || 5
             };
@@ -544,6 +570,23 @@
             }
         };
 
+        const handleModeChange = () => {
+            state.searchMode = elements.indexModeRadio.checked ? 'index' : 'federation';
+
+            // Toggle visibility of name inputs
+            if (state.searchMode === 'index') {
+                elements.indexNameGroup.style.display = 'block';
+                elements.federationNameGroup.style.display = 'none';
+            } else {
+                elements.indexNameGroup.style.display = 'none';
+                elements.federationNameGroup.style.display = 'block';
+            }
+
+            if (elements.searchInput.value.trim() && state.client) {
+                performSearch(elements.searchInput.value.trim());
+            }
+        };
+
         const performSearch = async (query) => {
             if (!state.client || !query.trim() || state.isSearching) {
                 return;
@@ -553,7 +596,8 @@
             showLoading();
 
             try {
-                const results = await state.client.search(query, state.isExact, state.config.resultsPerPage);
+                const targetName = state.searchMode === 'index' ? state.config.indexName : state.config.federationName;
+                const results = await state.client.search(query, state.isExact, state.config.resultsPerPage, state.searchMode, targetName);
                 displayResults(results);
             } catch (error) {
                 showError(`Search failed: ${error.message}`);
@@ -644,6 +688,8 @@
             // Search functionality listeners
             elements.searchInput.addEventListener('input', handleSearchInput);
             elements.exactToggle.addEventListener('click', handleToggleExact);
+            elements.indexModeRadio.addEventListener('change', handleModeChange);
+            elements.federationModeRadio.addEventListener('change', handleModeChange);
             // Keyboard shortcuts
             document.addEventListener('keydown', (event) => {
                 if (event.ctrlKey && event.key === '/') {
@@ -665,8 +711,22 @@
                     const config = JSON.parse(saved);
                     elements.endpointUrl.value = config.endpointUrl || '';
                     elements.indexName.value = config.indexName || '';
+                    elements.federationName.value = config.federationName || '';
                     elements.readKey.value = config.readKey || '';
                     elements.resultsPerPage.value = config.resultsPerPage || 5;
+
+                    if (config.searchMode) {
+                        state.searchMode = config.searchMode;
+                        if (config.searchMode === 'federation') {
+                            elements.federationModeRadio.checked = true;
+                            elements.indexModeRadio.checked = false;
+                        } else {
+                            elements.indexModeRadio.checked = true;
+                            elements.federationModeRadio.checked = false;
+                        }
+                        handleModeChange();
+                    }
+
                     handleConfigChange();
                 }
             } catch (error) {
@@ -676,7 +736,11 @@
 
         const saveConfig = () => {
             try {
-                localStorage.setItem('searchcraft-config', JSON.stringify(state.config));
+                const configToSave = {
+                    ...state.config,
+                    searchMode: state.searchMode
+                };
+                localStorage.setItem('searchcraft-config', JSON.stringify(configToSave));
             } catch (error) {
                 console.warn('Failed to save configuration:', error);
             }
@@ -694,15 +758,24 @@
 
             elements.endpointUrl.removeEventListener('input', handleConfigChange);
             elements.indexName.removeEventListener('input', handleConfigChange);
+            elements.federationName.removeEventListener('input', handleConfigChange);
             elements.readKey.removeEventListener('input', handleConfigChange);
             elements.resultsPerPage.removeEventListener('input', handleConfigChange);
 
             elements.endpointUrl.addEventListener('input', handleConfigChangeWithSave);
             elements.indexName.addEventListener('input', handleConfigChangeWithSave);
+            elements.federationName.addEventListener('input', handleConfigChangeWithSave);
             elements.readKey.addEventListener('input', handleConfigChangeWithSave);
             elements.resultsPerPage.addEventListener('input', handleConfigChangeWithSave);
 
-            const firstEmptyConfigField = [elements.endpointUrl, elements.indexName, elements.readKey]
+            elements.indexModeRadio.addEventListener('change', () => {
+                setTimeout(saveConfig, 0);
+            });
+            elements.federationModeRadio.addEventListener('change', () => {
+                setTimeout(saveConfig, 0);
+            });
+
+            const firstEmptyConfigField = [elements.endpointUrl, elements.indexName, elements.federationName, elements.readKey]
                 .find(field => !field.value.trim());
 
             if (firstEmptyConfigField) {
